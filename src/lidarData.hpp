@@ -8,6 +8,7 @@
 
 #include "dataStructures.h"
 
+
 void cropLidarPoints(std::vector<LidarPoint> &lidarPoints, float minX, float maxX, float maxY, float minZ, float maxZ, float minR);
 void loadLidarFromFile(std::vector<LidarPoint> &lidarPoints, std::string filename);
 

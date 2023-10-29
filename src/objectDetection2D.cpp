@@ -18,6 +18,7 @@ void detectObjects(cv::Mat& img, std::vector<BoundingBox>& bBoxes, float confThr
                    std::string basePath, std::string classesFile, std::string modelConfiguration, std::string modelWeights, bool bVis)
 {
     // load class names from file
+    
     vector<string> classes;
     ifstream ifs(classesFile.c_str());
     string line;

@@ -1,0 +1,22 @@
+
+# Executables
+build/
+devel/
+logs/
+install/
+CMakeFiles/
+OLD/
+media_Unt/
+dat/
+TEST/
+
+# Compiled files
+*.pyc
+
+.vscode/
+
+.idea
+
+
+
+

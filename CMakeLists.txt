@@ -5,6 +5,8 @@ add_definitions(-std=c++11)
 set(CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
 
+set(OpenCV_DIR "/home/baasit/slamplay/thirdparty/opencv/build")
+
 project(camera_fusion)
 
 find_package(OpenCV 4.1 REQUIRED)
