@@ -156,28 +156,39 @@ Prepare for TTC computation based on camera measurements by associating keypoint
 ```c++
 void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
 {
-    std::vector<cv::DMatch> kptMatchesRoi; 
-    for (auto match : kptMatches) {
-        if (boundingBox.roi.contains(kptsCurr[match.trainIdx].pt)) {
-            kptMatchesRoi.push_back(match); 
+    std::vector<cv::DMatch> kptMatchesRoi;
+    for (auto match : kptMatches)
+    {
+        if (boundingBox.roi.contains(kptsCurr[match.trainIdx].pt))
+        {
+            kptMatchesRoi.push_back(match);
         }
     }
-    if (kptMatchesRoi.empty()) 
-        return; 
+    if (kptMatchesRoi.empty())
+        return;
 
-    // filter matches 
-    double accumulatedDist = 0.0; 
-    for  (auto it = kptMatchesRoi.begin(); it != kptMatchesRoi.end(); ++it)  
-         accumulatedDist += it->distance; 
-    double meanDist = accumulatedDist / kptMatchesRoi.size();  
-    double threshold = meanDist * 0.7;        
-    for  (auto it = kptMatchesRoi.begin(); it != kptMatchesRoi.end(); ++it)
+    // filter matches
+    double accumulatedDist = 0.0;
+    for (auto it = kptMatchesRoi.begin(); it != kptMatchesRoi.end(); ++it)
     {
-       if (it->distance < threshold)
-           boundingBox.kptMatches.push_back(*it);
+        cv::Point2f pt1 = kptsPrev[it->queryIdx].pt;
+        cv::Point2f pt2 = kptsCurr[it->trainIdx].pt;
+        double dist = cv::norm(pt1 - pt2); // Euclidean distance
+        accumulatedDist += dist;
     }
-    cout << "Leave " << boundingBox.kptMatches.size()  << " matches" << endl;
+    double meanDist = accumulatedDist / kptMatchesRoi.size();
+    double threshold = meanDist * 0.7;
+    for (auto it = kptMatchesRoi.begin(); it != kptMatchesRoi.end(); ++it)
+    {
+        cv::Point2f pt1 = kptsPrev[it->queryIdx].pt;
+        cv::Point2f pt2 = kptsCurr[it->trainIdx].pt;
+        double dist = cv::norm(pt1 - pt2); // Euclidean distance
+        if (dist < threshold)
+            boundingBox.kptMatches.push_back(*it);
+    }
+    cout << "Leave " << boundingBox.kptMatches.size() << " matches" << endl;
 }
+
 ```
 
 ### FP.4 Compute Camera-based TTC
