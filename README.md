@@ -154,35 +154,30 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
 Prepare for TTC computation based on camera measurements by associating keypoint correspondences to the bounding boxes enclosing them. All matches fulfilling this condition should be added to a vector within the respective bounding box. The mean of Dmatch distance of all matches is used as a threshold to filter out matches with low similarity.
 
 ```c++
-void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev,
-                              std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches) {
-
-    double mean_distance = 0.0;
-    vector<cv::DMatch> inside_matches;
-    for (auto match: kptMatches) {
-        cv::KeyPoint currPoints = kptsCurr[match.trainIdx];
-        if (boundingBox.roi.contains(currPoints.pt)) {
-            inside_matches.push_back(match);
+void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
+{
+    std::vector<cv::DMatch> kptMatchesRoi; 
+    for (auto match : kptMatches) {
+        if (boundingBox.roi.contains(kptsCurr[match.trainIdx].pt)) {
+            kptMatchesRoi.push_back(match); 
         }
     }
+    if (kptMatchesRoi.empty()) 
+        return; 
 
-    for (auto inside_match:inside_matches) {
-        mean_distance += inside_match.distance;
+    // filter matches 
+    double accumulatedDist = 0.0; 
+    for  (auto it = kptMatchesRoi.begin(); it != kptMatchesRoi.end(); ++it)  
+         accumulatedDist += it->distance; 
+    double meanDist = accumulatedDist / kptMatchesRoi.size();  
+    double threshold = meanDist * 0.7;        
+    for  (auto it = kptMatchesRoi.begin(); it != kptMatchesRoi.end(); ++it)
+    {
+       if (it->distance < threshold)
+           boundingBox.kptMatches.push_back(*it);
     }
-    if (inside_matches.size() > 0) {
-        mean_distance = mean_distance / inside_matches.size();
-    } else {
-        return;
-    }
-    //
-    for (auto inside_match:inside_matches) {
-        if (inside_match.distance < mean_distance) {
-            boundingBox.kptMatches.push_back(inside_match);
-        }
-    }
-
+    cout << "Leave " << boundingBox.kptMatches.size()  << " matches" << endl;
 }
-
 ```
 
 ### FP.4 Compute Camera-based TTC
@@ -242,7 +237,26 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 
 ## FP.5 Performance Evaluation 1
 
-Identify examples where the Lidar-based TTC estimation seems implausible. Describe observations and provide reasoning for any discrepancies noted. In this case, no frames were found where the Lidar-TTC results appeared unreasonable, thanks to the median value approach for reducing outlier impac
+Identify examples where the Lidar-based TTC estimation seems implausible. Describe observations and provide reasoning for any discrepancies noted. 
+
+
+<p align = "center">
+  <img src="results/Result-1.png"  width="480" height="240">
+</p>
+
+<p align = "center">
+  <img src="results/Result-2.png"  width="480" height="240">
+</p>
+
+<p align = "center">
+  <img src="results/Result-3.png"  width="480" height="240">
+</p>
+
+As can be seen from above images, TTC estimation is very unstable, although they are adjacent frames. In order to reject the outliers and make the estimation more robust, the median point in x_direction is choosen as the targeted lidar point for TTC calculation. 
+```
+TTC = medianXCurr * dT / (medianXPrev - medianXCurr);
+```
+There is a red light in front and the speed of cars are all slow or even close to zero. Therefore, the delta of medianXPrev and medianXCurr is extremely small. This will cause the TTC estimiation unstable. 
 
 
 

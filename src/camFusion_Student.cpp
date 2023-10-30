@@ -130,34 +130,60 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
  * @param kptsCurr The keypoints in the current frame.
  * @param kptMatches The keypoint matches between the previous and current frames.
  */
-void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev,
-                              std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches) {
+// void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev,
+//                               std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches) {
 
-    double mean_distance = 0.0;
-    vector<cv::DMatch> inside_matches;
-    for (auto match: kptMatches) {
-        cv::KeyPoint currPoints = kptsCurr[match.trainIdx];
-        if (boundingBox.roi.contains(currPoints.pt)) {
-            inside_matches.push_back(match);
+//     double mean_distance = 0.0;
+//     vector<cv::DMatch> inside_matches;
+//     for (auto match: kptMatches) {
+//         cv::KeyPoint currPoints = kptsCurr[match.trainIdx];
+//         if (boundingBox.roi.contains(currPoints.pt)) {
+//             inside_matches.push_back(match);
+//         }
+//     }
+
+
+//     for (auto inside_match:inside_matches) {
+//         mean_distance += inside_match.distance;
+//     }
+//     if (inside_matches.size() > 0) {
+//         mean_distance = mean_distance / inside_matches.size();
+//     } else {
+//         return;
+//     }
+//     //
+//     for (auto inside_match:inside_matches) {
+//         if (inside_match.distance < mean_distance) {
+//             boundingBox.kptMatches.push_back(inside_match);
+//         }
+//     }
+
+// }
+
+// associate a given bounding box with the keypoints it contains
+void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
+{
+    std::vector<cv::DMatch> kptMatchesRoi; 
+    for (auto match : kptMatches) {
+        if (boundingBox.roi.contains(kptsCurr[match.trainIdx].pt)) {
+            kptMatchesRoi.push_back(match); 
         }
     }
+    if (kptMatchesRoi.empty()) 
+        return; 
 
-
-    for (auto inside_match:inside_matches) {
-        mean_distance += inside_match.distance;
+    // filter matches 
+    double accumulatedDist = 0.0; 
+    for  (auto it = kptMatchesRoi.begin(); it != kptMatchesRoi.end(); ++it)  
+         accumulatedDist += it->distance; 
+    double meanDist = accumulatedDist / kptMatchesRoi.size();  
+    double threshold = meanDist * 0.7;        
+    for  (auto it = kptMatchesRoi.begin(); it != kptMatchesRoi.end(); ++it)
+    {
+       if (it->distance < threshold)
+           boundingBox.kptMatches.push_back(*it);
     }
-    if (inside_matches.size() > 0) {
-        mean_distance = mean_distance / inside_matches.size();
-    } else {
-        return;
-    }
-    //
-    for (auto inside_match:inside_matches) {
-        if (inside_match.distance < mean_distance) {
-            boundingBox.kptMatches.push_back(inside_match);
-        }
-    }
-
+    cout << "Leave " << boundingBox.kptMatches.size()  << " matches" << endl;
 }
 
 
